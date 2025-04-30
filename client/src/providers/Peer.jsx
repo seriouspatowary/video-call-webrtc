@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { io } from 'socket.io-client';
 
 const PeerContext = React.createContext(null);
@@ -6,6 +6,9 @@ const PeerContext = React.createContext(null);
 export const usePeer = ()=> React.useContext(PeerContext)
 
 export const PeerProviders = (props) => {
+
+    const [remoteStream, setRemoteStream] = useState(null);
+
 
     const peer = useMemo(() => new RTCPeerConnection({
         iceServers: [
@@ -45,9 +48,33 @@ export const PeerProviders = (props) => {
         }
     }
 
+    const handleTrackEvent = useCallback((ev) => {
+        const streams = ev.streams;
+        setRemoteStream(streams[0])
+        
+    }, [])
+    
+
+    const handleaNegotiate = useCallback(() => {
+       console.log("Opps !! Negg Needed")
+        
+    },[])
+
+    useEffect(() => {
+        peer.addEventListener('track', handleTrackEvent);
+        peer.addEventListener('negotiationneeded',handleaNegotiate)
+
+        return () => {
+            peer.removeEventListener('track', handleTrackEvent);
+            peer.removeEventListener('negotiationneeded',handleaNegotiate)
+
+        }
+        
+    },[handleTrackEvent,handleaNegotiate,peer])
+
 
     return (
-        <PeerContext.Provider value={{peer,createOffer,createAnswer,setRemoteAns, sendStream}}>
+        <PeerContext.Provider value={{peer,createOffer,createAnswer,setRemoteAns, sendStream,remoteStream}}>
             {props.children}
         </PeerContext.Provider>
     )
